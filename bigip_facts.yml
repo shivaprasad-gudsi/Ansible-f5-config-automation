@@ -1,0 +1,70 @@
+---
+- name: GRAB F5 FACTS
+  hosts: f5
+  connection: local
+  gather_facts: false
+
+  vars:
+    login_user: "admin"
+    login_password: "admin"
+
+  tasks:
+    - name: COLLECT BIG-IP system information
+      f5networks.f5_modules.bigip_device_info:
+        gather_subset:
+          - system-info
+        provider:
+          server: "{{ansible_host}}"
+          user: "{{login_user}}"
+          password: "{{login_password}}"
+          server_port: 443
+          validate_certs: false
+      register: device_facts
+
+    - name: COLLECT interfaces and vlans
+      f5networks.f5_modules.bigip_device_info:
+        gather_subset:
+          - interfaces
+          - vlans 
+        provider:
+          server: "{{ansible_host}}"
+          user: "{{login_user}}"
+          password: "{{login_password}}"
+          server_port: 443
+          validate_certs: false
+      register: interface_facts
+
+    - name: COLLECT LTM Pools
+      f5networks.f5_modules.bigip_device_info:
+        gather_subset:
+          - ltm-pools
+        provider:
+          server: "{{ansible_host}}"
+          user: "{{login_user}}"
+          password: "{{login_password}}"
+          server_port: 443
+          validate_certs: false
+      register: pool_facts
+
+    - name: DISPLAY COMPLETE BIG-IP SYSTEM INFORMATION
+      debug:
+        var: device_facts
+
+    - name: DISPLAY ONLY THE MAC ADDRESS
+      debug:
+        var: device_facts['system_info']['base_mac_address']
+
+    - name: DISPLAY ONLY THE VERSION
+      debug:
+        var: device_facts['system_info']['product_version']
+
+    - name: DISPLAY interface details
+      debug:
+        var: interface_facts
+
+    - set_fact:
+         pool_names : "{{ pool_facts['ansible_facts'] | json_query('ansible_net_ltm_pools[*].name') }}"
+
+    - name: DISPLAY ltm pool names
+      debug:
+        var : pool_names
