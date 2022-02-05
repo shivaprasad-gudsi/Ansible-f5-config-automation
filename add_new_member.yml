@@ -1,0 +1,54 @@
+---
+- name: BIG-IP SETUP
+  hosts: f5
+  connection: local
+  gather_facts: false
+  vars:
+      login_user: "admin"
+      login_password: "admin"
+
+  tasks:
+    - name: CREATE NODES
+      f5networks.f5_modules.bigip_node:
+        provider:
+          server: "{{ansible_host}}"
+          user: "{{login_user}}"
+          password: "{{login_password}}"
+          server_port: 443
+          validate_certs: false
+        host: "10.2.2.33"
+        name: "orange-server"
+        monitors:
+             - /Common/icmp
+
+    - name: ADD POOL MEMBERS
+      f5networks.f5_modules.bigip_pool_member:
+        provider:
+          server: "{{ansible_host}}"
+          user: "{{login_user}}"
+          password: "{{login_password}}"
+          server_port: 443
+          validate_certs: false
+        state: "present"
+        name: "orange-server"
+        host: "10.2.2.33"
+        port: "80"
+        pool: "http_pool"
+      register: result
+
+    - name: Display results
+      debug:
+        var: result
+
+
+    - name: SAVE RUNNING CONFIG ON BIG-IP
+      f5networks.f5_modules.bigip_config:
+        provider:
+          server: "{{ansible_host}}"
+          user: "{{login_user}}"
+          password: "{{login_password}}"
+          server_port: 443
+          validate_certs: false
+        save: true
+      when:
+        - result['state'] == "present"

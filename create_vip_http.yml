@@ -1,0 +1,25 @@
+---
+- name: BIG-IP SETUP
+  hosts: f5
+  connection: local
+  vars:
+     login_user: "admin"
+     login_password: "admin"
+  gather_facts: false
+
+  tasks:
+    - name: ADD VIRTUAL SERVER
+      f5networks.f5_modules.bigip_virtual_server:
+        provider:
+          server: "{{ansible_host}}"
+          user: "{{login_user}}"
+          password: "{{login_password}}"
+          server_port: 443
+          validate_certs: false
+        name: "http_vip_ansible"
+        destination: "192.168.1.63"
+        port: "80"
+        enabled_vlans: "all"
+        all_profiles: ['http']
+        pool: "http_pool"
+        snat: "Automap"
